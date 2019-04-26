@@ -9,7 +9,6 @@ import cv2
 import mouse
 import serial
 import numpy as np
-from multiprocessing import Process
 import math
 import wx 
 
@@ -39,10 +38,11 @@ def clickArduino():
     try:
         text=ser.readline()
         dis = int(text.decode())
-        print(dis)
+        #print(dis)
         return dis
     except:
         pass
+
 
 #if __name__ == "__main__":
 cap=cv2.VideoCapture(0);#'http://192.168.0.101:4747/mjpegfeed');
@@ -110,7 +110,7 @@ while True:
             
             cv2.circle(roi,topmost,10,(255,0,0),2);
 #            cv2.circle(roi,leftmost,5,(0,120,255),-1);
-            cv2.circle(roi,(temp,bottommost[1]),5,(230,0,255),-1);
+            #cv2.circle(roi,(temp,bottommost[1]),5,(230,0,255),-1);
             
             ################### get original pixel location #############
             
@@ -121,8 +121,8 @@ while True:
             temp_x=topmost[0];temp_y=topmost[1];
 
             dis = clickArduino()
-            if dis<=50:
-                #mouse.click(button='left');
+            if dis<=20:
+                mouse.click(button='left');
                 cv2.circle(roi,topmost,20,(0,255,0),-1);
                 cv2.line(roi,(topmost[0],topmost[1]+25),(topmost[0],h-280),(0,10,225),2);
 
@@ -134,10 +134,10 @@ while True:
     cv2.rectangle(frame,(250,1),(w-1,h-200),(0,255,0),2);
     cv2.rectangle(frame,(300,1),(w-40,h-280),(255,0,0),2);
     cv2.imshow('frame',frame);
-    if cv2.waitKey(2)==ord('r'):
+    if cv2.waitKey(5)==ord('r'):
         print('Background reset')
         bg=temp_roi;
-    elif cv2.waitKey(2)==27:
+    elif cv2.waitKey(5)==27:
         break;
 #%%############# Releasing the resources ##############
 cv2.destroyAllWindows();
