@@ -7,9 +7,13 @@ Created on Tue Jan 16 23:58:20 2018
 
 import cv2
 import mouse
+import serial
 import numpy as np
+from multiprocessing import Process
 import math
 import wx 
+
+
 
 try:
     del app;
@@ -29,7 +33,17 @@ def isPointClose(x1,y1,x2,y2,scale):
         return True;
     else :
         return False; 
-    
+
+ser = serial.Serial('COM3', 9600, timeout=1)   ##### Arduino & ultrasonic sensor
+def clickArduino():
+    try:
+        text=ser.readline()
+        dis = int(text.decode())
+        print(dis)
+        return dis
+    except:
+        pass
+
 #if __name__ == "__main__":
 cap=cv2.VideoCapture(0);#'http://192.168.0.101:4747/mjpegfeed');
 bg=cv2.flip(cap.read()[1],1);
@@ -48,10 +62,9 @@ app=wx.App(False);
 
 counter=0;
 temp_x=temp_y=0;
+
 while True:
     frame=cv2.flip(cap.read()[1],1);
-    
-    
     roi=frame[1:h-199,250:w].copy();
     temp_roi=roi.copy();
     
@@ -62,7 +75,7 @@ while True:
 #    fmask=cv2.erode(fmask,cv2.getStructuringElement(cv2.MORPH_ERODE,(2,2)),iterations=2);
     mask1=cv2.morphologyEx(fmask,cv2.MORPH_CLOSE,\
                            cv2.getStructuringElement(cv2.MORPH_ELLIPSE,(2,2)));
-#    mask1=cv2.erode(mask1,cv2.getStructuringElement(cv2.MORPH_ERODE,(2,2)),iterations=2);
+    mask1=cv2.erode(mask1,cv2.getStructuringElement(cv2.MORPH_ERODE,(2,2)),iterations=2);
     cv2.imshow('mask1',mask1);
     fg_frame=cv2.bitwise_and(roi,roi,mask=mask1);
     cv2.imshow('fg_frame',fg_frame);
@@ -73,7 +86,7 @@ while True:
     
     ############ Tracking the hand contour ################
     
-    con=cv2.findContours(bw_frame,cv2.RETR_EXTERNAL,cv2.CHAIN_APPROX_SIMPLE)[1];
+    con=cv2.findContours(bw_frame,cv2.RETR_EXTERNAL,cv2.CHAIN_APPROX_SIMPLE)[0];
     try:
         my_con=max(con,key=cv2.contourArea);
     except:
@@ -105,16 +118,14 @@ while True:
             y=(topmost[1]*sy/(h-281));
             if(not isPointClose(topmost[0],topmost[1],temp_x,temp_y,3)):
                 mouse.move(sx-x,y,absolute=True, duration=.03);
-            else:
-                counter+=1;
             temp_x=topmost[0];temp_y=topmost[1];
-            if counter>=50:
-                mouse.click(button='left');
+
+            dis = clickArduino()
+            if dis<=50:
+                #mouse.click(button='left');
                 cv2.circle(roi,topmost,20,(0,255,0),-1);
                 cv2.line(roi,(topmost[0],topmost[1]+25),(topmost[0],h-280),(0,10,225),2);
-                print(counter);
-                counter=0;
-            
+
             cv2.putText(roi,str('%d,%d'%(sx-x,y)),topmost, cv2.FONT_HERSHEY_SIMPLEX, .5,(255,255,255),1,cv2.LINE_AA)
 
     except:
@@ -131,6 +142,7 @@ while True:
 #%%############# Releasing the resources ##############
 cv2.destroyAllWindows();
 cap.release();
+ser.close()
 
 
 
