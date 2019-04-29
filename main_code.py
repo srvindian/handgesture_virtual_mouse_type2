@@ -47,8 +47,11 @@ def getDistance():
                 dis = int(text)
                 if dis<=20:
                     if ~mouse.is_pressed():
-                        mouse.click(button='left');
+                        mouse.press()
+                        #mouse.click(button='left');
                         print("clicked")
+                else:
+                    mouse.release()
             #time.sleep(.03)
         except:
             break;
@@ -153,6 +156,7 @@ while True:
         bg=temp_roi;
     elif cv2.waitKey(5)==27:
         break;
+
 #%%############# Releasing the resources ##############
 cv2.destroyAllWindows();
 cap.release();
