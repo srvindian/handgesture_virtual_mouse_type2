@@ -6,9 +6,11 @@ Created on Tue Jan 16 23:58:20 2018
 """
 
 import cv2
+import time
 import mouse
 import serial
 import numpy as np
+import threading
 import math
 import wx 
 
@@ -33,16 +35,28 @@ def isPointClose(x1,y1,x2,y2,scale):
     else :
         return False; 
 
-ser = serial.Serial('COM3', 9600, timeout=1)   ##### Arduino & ultrasonic sensor
-def clickArduino():
-    try:
-        text=ser.readline()
-        dis = int(text.decode())
-        #print(dis)
-        return dis
-    except:
-        pass
+ser = serial.Serial('COM3', 9600, timeout=1)   ##### Arduino & ultrasonic sensor at com port 3
 
+def getDistance():
+    while(1):
+        try:
+            text=ser.readline()
+            text=text.decode()
+            if text!='':
+                #print(text)
+                dis = int(text)
+                if dis<=20:
+                    if ~mouse.is_pressed():
+                        mouse.click(button='left');
+                        print("clicked")
+            #time.sleep(.03)
+        except:
+            break;
+
+def clickArduino():
+    t = threading.Thread(name="child",target=getDistance)
+    if not t.is_alive():
+            t.start()
 
 #if __name__ == "__main__":
 cap=cv2.VideoCapture(0);#'http://192.168.0.101:4747/mjpegfeed');
@@ -63,7 +77,10 @@ app=wx.App(False);
 counter=0;
 temp_x=temp_y=0;
 
+clickArduino()       # starting a new thread for getting mouse click event from ultrasonic sensor
+
 while True:
+    
     frame=cv2.flip(cap.read()[1],1);
     roi=frame[1:h-199,250:w].copy();
     temp_roi=roi.copy();
@@ -120,12 +137,9 @@ while True:
                 mouse.move(sx-x,y,absolute=True, duration=.03);
             temp_x=topmost[0];temp_y=topmost[1];
 
-            dis = clickArduino()
-            if dis<=20:
-                mouse.click(button='left');
+            if mouse.is_pressed():
                 cv2.circle(roi,topmost,20,(0,255,0),-1);
                 cv2.line(roi,(topmost[0],topmost[1]+25),(topmost[0],h-280),(0,10,225),2);
-
             cv2.putText(roi,str('%d,%d'%(sx-x,y)),topmost, cv2.FONT_HERSHEY_SIMPLEX, .5,(255,255,255),1,cv2.LINE_AA)
 
     except:
