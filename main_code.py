@@ -51,7 +51,8 @@ def getDistance():
                         #mouse.click(button='left');
                         print("clicked")
                 else:
-                    mouse.release()
+                    if mouse.is_pressed():
+                        mouse.release()
             #time.sleep(.03)
         except:
             break;
